@@ -342,11 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let logoClickCount = 0;
     let clickTimeout;
 
-    function checkAdminVisibility() {
-        if (localStorage.getItem('isAdminAuthorized') === 'true') {
-            if (navAdmin) navAdmin.style.display = 'block';
-        }
-    }
+
 
     if (logoImg) {
         logoImg.style.cursor = 'pointer'; // Make it look clickable
@@ -368,5 +364,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    checkAdminVisibility();
+
 });
