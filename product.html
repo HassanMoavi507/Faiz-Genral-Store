@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | Faiz Store</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .product-detail-container {
+            max-width: 1000px;
+            margin: 100px auto;
+            padding: 2rem;
+            display: flex;
+            gap: 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .detail-image {
+            flex: 1;
+            max-width: 450px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .detail-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+
+        .detail-image img:hover {
+            transform: scale(1.05);
+        }
+
+        .detail-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .detail-category {
+            color: var(--accent);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+
+        .detail-price {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-stock {
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .close-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .close-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .product-detail-container {
+                flex-direction: column;
+                margin: 50px 20px;
+                padding: 1.5rem;
+            }
+
+            .detail-image {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <button class="close-btn" onclick="window.close()">Close Window</button>
+
+    <div class="product-detail-container" id="productDetail">
+        <div class="detail-image">
+            <img id="pImg" src="" alt="Product">
+        </div>
+        <div class="detail-info">
+            <span class="detail-category" id="pCategory">Category</span>
+            <h1 class="detail-title" id="pTitle">Product Name</h1>
+            <div class="detail-price" id="pPrice">Rs. 0</div>
+            <div class="detail-stock" id="pStock">In Stock</div>
+
+            <div id="pVariantsContainer" style="margin-bottom: 2rem; display: none;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-light);">Select Flavor:</h3>
+                <div id="pVariantsGrid" class="variant-grid"
+                    style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">
+                    <!-- Variants injected here -->
+                </div>
+            </div>
+
+            <button class="btn-primary" id="pAddCart" style="width: fit-content; padding: 12px 30px;">Add to
+                Cart</button>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = parseInt(urlParams.get('id'));
+            let selectedVariant = null;
+
+            if (productId) {
+                const products = getProducts();
+                const product = products.find(p => p.id === productId);
+
+                const currentPrice = product.price;
+                const originalPrice = product.originalPrice || currentPrice;
+                const savings = originalPrice - currentPrice;
+
+                document.getElementById('pImg').src = product.image;
+                document.getElementById('pTitle').textContent = product.name;
+                document.getElementById('pCategory').textContent = product.category;
+
+                // Handle Variants
+                const variantsContainer = document.getElementById('pVariantsContainer');
+                const variantsGrid = document.getElementById('pVariantsGrid');
+                if (product.variants && product.variants.length > 0) {
+                    variantsContainer.style.display = 'block';
+                    product.variants.forEach(variant => {
+                        const option = document.createElement('div');
+                        option.className = 'variant-option';
+                        option.innerHTML = `
+                            <img src="${variant.image}" alt="${variant.name}">
+                            <span style="font-size: 0.75rem; color: #f3f4f6; font-weight: 600;">${variant.name}</span>
+                        `;
+                        option.onclick = () => {
+                            document.querySelectorAll('.variant-option').forEach(el => el.classList.remove('selected'));
+                            option.classList.add('selected');
+                            selectedVariant = variant.name;
+                            document.getElementById('pImg').src = variant.image;
+                        };
+                        variantsGrid.appendChild(option);
+                    });
+                }
+
+                let priceHtml = `Rs. ${currentPrice.toLocaleString()}`;
+                if (savings > 0) {
+                    priceHtml = `
+                            <div style="display: flex; flex-direction: column;">
+                                <span style="color: var(--text-muted); font-size: 1.1rem;">Was: <span style="text-decoration: line-through red;">Rs. ${originalPrice.toLocaleString()}</span></span>
+                                <span style="color: var(--accent); font-size: 2.5rem; font-weight: 800;">Now: Rs. ${currentPrice.toLocaleString()}</span>
+                                <span style="background: rgba(76, 175, 80, 0.1); color: #4CAF50; font-size: 1rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-top: 5px; width: fit-content;">Save Rs. ${savings.toLocaleString()}!</span>
+                                ${product.offerReason ? `<p style="font-size: 0.9rem; color: #ffd700; margin-top: 8px;">✨ ${product.offerReason}</p>` : ''}
+                            </div>
+                        `;
+                }
+                document.getElementById('pPrice').innerHTML = priceHtml;
+
+                const stockEl = document.getElementById('pStock');
+                if (product.stock <= 0) {
+                    stockEl.textContent = 'Out of Stock';
+                    stockEl.style.color = '#ff4b2b';
+                    document.getElementById('pAddCart').disabled = true;
+                    document.getElementById('pAddCart').textContent = 'Sold Out';
+                } else {
+                    stockEl.textContent = `Available: ${product.stock}`;
+                    stockEl.style.color = '#4CAF50';
+                }
+
+                document.getElementById('pAddCart').onclick = () => {
+                    if (product.variants && product.variants.length > 0 && !selectedVariant) {
+                        alert('Please select a flavor first!');
+                        return;
+                    }
+
+                    // We need access to addToCart from opener if possible, or just re-implement
+                    if (window.opener && window.opener.addToCart) {
+                        window.opener.addToCart(product.id, selectedVariant);
+                        alert('Added to cart!');
+                    } else {
+                        // Fallback if opened directly
+                        let cart = JSON.parse(localStorage.getItem('faiz_cart')) || [];
+                        const cartItemId = selectedVariant ? `${product.id}-${selectedVariant}` : product.id;
+                        const existingItem = cart.find(item => item.cartItemId === cartItemId);
+
+                        const itemImage = selectedVariant ? product.variants.find(v => v.name === selectedVariant).image : product.image;
+
+                        if (existingItem) {
+                            existingItem.quantity += 1;
+                        } else {
+                            cart.push({
+                                ...product,
+                                cartItemId: cartItemId,
+                                variantName: selectedVariant,
+                                image: itemImage,
+                                quantity: 1
+                            });
+                        }
+                        localStorage.setItem('faiz_cart', JSON.stringify(cart));
+                        alert('Added to cart! Please refresh the main page to see changes.');
+                    }
+                };
+            } else {
+                document.getElementById('productDetail').innerHTML = '<h1>Product not found</h1>';
+            }
+        });
+    </script>
+</body>
+
+</html>
