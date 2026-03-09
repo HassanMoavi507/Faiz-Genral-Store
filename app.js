@@ -336,5 +336,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial load
     renderProducts();
-    updateCartUI();
+    // Admin Link Visibility Logic
+    const navAdmin = document.getElementById('navAdmin');
+    const logoImg = document.querySelector('.navbar .logo img');
+    let logoClickCount = 0;
+    let clickTimeout;
+
+    function checkAdminVisibility() {
+        if (localStorage.getItem('isAdminAuthorized') === 'true') {
+            if (navAdmin) navAdmin.style.display = 'block';
+        }
+    }
+
+    if (logoImg) {
+        logoImg.style.cursor = 'pointer'; // Make it look clickable
+        logoImg.addEventListener('click', () => {
+            logoClickCount++;
+            clearTimeout(clickTimeout);
+            clickTimeout = setTimeout(() => {
+                logoClickCount = 0;
+            }, 3000); // Reset count after 3 seconds of inactivity
+
+            if (logoClickCount === 5) {
+                if (navAdmin) {
+                    const isHidden = navAdmin.style.display === 'none';
+                    navAdmin.style.display = isHidden ? 'block' : 'none';
+                    alert(isHidden ? 'Admin access enabled!' : 'Admin access hidden!');
+                }
+                logoClickCount = 0;
+            }
+        });
+    }
+
+    checkAdminVisibility();
 });

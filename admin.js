@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Simple Admin Protection
     loginBtn.addEventListener('click', () => {
         if (adminPassword.value === 'Faiz507@') {
+            localStorage.setItem('isAdminAuthorized', 'true');
             adminAuth.style.display = 'none';
         } else {
             loginError.style.display = 'block';
