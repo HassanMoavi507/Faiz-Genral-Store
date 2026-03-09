@@ -90,12 +90,15 @@ const initialProducts = [
     }
 ];
 
-// Initialize data in localStorage if not exists or if we need to reset for new features
-if (!localStorage.getItem('faiz_products_v6')) {
+// Initialize data in localStorage if not exists
+if (!localStorage.getItem('faiz_products')) {
     localStorage.setItem('faiz_products', JSON.stringify(initialProducts));
+}
+if (!localStorage.getItem('faiz_users')) {
     localStorage.setItem('faiz_users', JSON.stringify([]));
+}
+if (!localStorage.getItem('faiz_orders')) {
     localStorage.setItem('faiz_orders', JSON.stringify([]));
-    localStorage.setItem('faiz_products_v6', 'true');
 }
 
 function getProducts() {
