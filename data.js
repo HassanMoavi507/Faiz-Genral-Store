@@ -1,3 +1,23 @@
+// --- Firebase Configuration ---
+// PASTE YOUR FIREBASE CONFIGURATION HERE
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase only if the config is valid
+let db = null;
+let auth = null;
+if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+}
+
 const initialProducts = [
     {
         id: 1,
@@ -90,38 +110,112 @@ const initialProducts = [
     }
 ];
 
-// Initialize data in localStorage if not exists
-if (!localStorage.getItem('faiz_products')) {
-    localStorage.setItem('faiz_products', JSON.stringify(initialProducts));
+// Fallback logic for LocalStorage
+function initLocalStorage() {
+    if (!localStorage.getItem('faiz_products')) {
+        localStorage.setItem('faiz_products', JSON.stringify(initialProducts));
+    }
+    if (!localStorage.getItem('faiz_users')) {
+        localStorage.setItem('faiz_users', JSON.stringify([]));
+    }
+    if (!localStorage.getItem('faiz_orders')) {
+        localStorage.setItem('faiz_orders', JSON.stringify([]));
+    }
 }
-if (!localStorage.getItem('faiz_users')) {
-    localStorage.setItem('faiz_users', JSON.stringify([]));
-}
-if (!localStorage.getItem('faiz_orders')) {
-    localStorage.setItem('faiz_orders', JSON.stringify([]));
-}
+initLocalStorage();
 
-function getProducts() {
+// --- Data Fetching Functions ---
+
+async function getProducts() {
+    if (db) {
+        try {
+            const snapshot = await db.collection('products').get();
+            const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // If DB is empty, use initialProducts
+            if (products.length === 0) {
+                await saveProducts(initialProducts);
+                return initialProducts;
+            }
+            return products;
+        } catch (error) {
+            console.error("Error fetching products from Firestore:", error);
+            return JSON.parse(localStorage.getItem('faiz_products'));
+        }
+    }
     return JSON.parse(localStorage.getItem('faiz_products'));
 }
 
-function saveProducts(products) {
+async function saveProducts(products) {
+    if (db) {
+        try {
+            const batch = db.batch();
+            products.forEach(product => {
+                const docRef = db.collection('products').doc(product.id.toString());
+                batch.set(docRef, product);
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Error saving products to Firestore:", error);
+        }
+    }
     localStorage.setItem('faiz_products', JSON.stringify(products));
 }
 
-function getUsers() {
+async function getUsers() {
+    if (db) {
+        try {
+            const snapshot = await db.collection('users').get();
+            return snapshot.docs.map(doc => doc.data());
+        } catch (error) {
+            console.error("Error fetching users from Firestore:", error);
+            return JSON.parse(localStorage.getItem('faiz_users')) || [];
+        }
+    }
     return JSON.parse(localStorage.getItem('faiz_users')) || [];
 }
 
-function saveUsers(users) {
+async function saveUsers(users) {
+    if (db) {
+        try {
+            const batch = db.batch();
+            users.forEach(user => {
+                const docRef = db.collection('users').doc(user.email);
+                batch.set(docRef, user);
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Error saving users to Firestore:", error);
+        }
+    }
     localStorage.setItem('faiz_users', JSON.stringify(users));
 }
 
-function getOrders() {
+async function getOrders() {
+    if (db) {
+        try {
+            const snapshot = await db.collection('orders').get();
+            return snapshot.docs.map(doc => doc.data());
+        } catch (error) {
+            console.error("Error fetching orders from Firestore:", error);
+            return JSON.parse(localStorage.getItem('faiz_orders')) || [];
+        }
+    }
     return JSON.parse(localStorage.getItem('faiz_orders')) || [];
 }
 
-function saveOrders(orders) {
+async function saveOrders(orders) {
+    if (db) {
+        try {
+            const batch = db.batch();
+            orders.forEach(order => {
+                const docRef = db.collection('orders').doc(order.id.toString());
+                batch.set(docRef, order);
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error("Error saving orders to Firestore:", error);
+        }
+    }
     localStorage.setItem('faiz_orders', JSON.stringify(orders));
 }
 
@@ -135,6 +229,7 @@ function setCurrentUser(user) {
 
 function logout() {
     sessionStorage.removeItem('faiz_current_user');
+    if (auth) auth.signOut();
 }
 
 function getCart() {

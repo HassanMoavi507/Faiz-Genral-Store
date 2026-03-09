@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Add New Product
-    addNewBtn.addEventListener('click', () => {
+    addNewBtn.addEventListener('click', async () => {
         const name = document.getElementById('newName').value;
         const price = parseInt(document.getElementById('newPrice').value);
         const stock = parseInt(document.getElementById('newStock').value);
@@ -73,10 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (name && !isNaN(price) && !isNaN(stock) && imageFile) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const imageData = e.target.result;
-                const products = getProducts();
-                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                const products = await getProducts();
+                const newId = products.length > 0 ? Math.max(...products.map(p => parseInt(p.id))) + 1 : 1;
 
                 const newProduct = {
                     id: newId,
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     variants: currentVariants.length > 0 ? [...currentVariants] : undefined
                 };
                 products.push(newProduct);
-                saveProducts(products);
+                await saveProducts(products);
 
                 // Clear form
                 document.getElementById('newName').value = '';
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 variantsList.innerHTML = '';
 
                 alert(`${name} added to store!`);
-                renderInventory();
+                await renderInventory();
             };
             reader.readAsDataURL(imageFile);
         } else {
@@ -108,8 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function renderInventory() {
-        const products = getProducts();
+    async function renderInventory() {
+        const products = await getProducts();
         inventoryList.innerHTML = '';
 
         products.forEach(product => {
@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td>
                     <button class="btn-sell" onclick="simulateSale(${product.id})">Sold 1</button>
+                    <button class="btn-edit" onclick="openEditModal(${product.id})">Edit</button>
                     <button class="btn-save" onclick="updateProduct(${product.id})">Save All</button>
                     <button class="btn-delete" onclick="deleteProduct(${product.id})">Delete</button>
                 </td>
@@ -143,44 +144,152 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    window.updateProduct = (id) => {
+    // Edit Modal Logic
+    const editModal = document.getElementById('editModal');
+    const closeEditModal = document.getElementById('closeEditModal');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    let editVariants = [];
+
+    window.openEditModal = async (id) => {
+        const products = await getProducts();
+        const product = products.find(p => p.id == id);
+        if (!product) return;
+
+        document.getElementById('editProductId').value = product.id;
+        document.getElementById('editName').value = product.name;
+        document.getElementById('editPrice').value = product.price;
+        document.getElementById('editStock').value = product.stock;
+        document.getElementById('editCategory').value = product.category;
+
+        const previewImg = document.getElementById('currentEditImage');
+        previewImg.src = product.image;
+        previewImg.style.display = 'block';
+
+        // Load Variants
+        editVariants = product.variants ? [...product.variants] : [];
+        renderEditVariants();
+
+        editModal.style.display = 'block';
+    };
+
+    function renderEditVariants() {
+        const list = document.getElementById('editVariantsList');
+        list.innerHTML = '';
+        editVariants.forEach(variant => {
+            const tag = document.createElement('div');
+            tag.style.cssText = 'background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 5px 10px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; border: 1px solid #10b981;';
+            tag.innerHTML = `
+                <img src="${variant.image}" style="width: 20px; height: 20px; border-radius: 4px;">
+                <span>${variant.name}</span>
+                <span style="cursor: pointer; color: #ef4444;" onclick="removeEditVariant('${variant.name}')">&times;</span>
+            `;
+            list.appendChild(tag);
+        });
+    }
+
+    window.removeEditVariant = (name) => {
+        editVariants = editVariants.filter(v => v.name !== name);
+        renderEditVariants();
+    };
+
+    document.getElementById('addEditVariantBtn').addEventListener('click', () => {
+        const name = document.getElementById('editVariantNameInput').value;
+        const imageFile = document.getElementById('editVariantImageInput').files[0];
+
+        if (!name || !imageFile) {
+            alert('Please provide flavor name and image!');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            editVariants.push({ name, image: e.target.result });
+            renderEditVariants();
+            document.getElementById('editVariantNameInput').value = '';
+            document.getElementById('editVariantImageInput').value = '';
+        };
+        reader.readAsDataURL(imageFile);
+    });
+
+    saveEditBtn.addEventListener('click', async () => {
+        const id = document.getElementById('editProductId').value;
+        const name = document.getElementById('editName').value;
+        const price = parseInt(document.getElementById('editPrice').value);
+        const stock = parseInt(document.getElementById('editStock').value);
+        const category = document.getElementById('editCategory').value;
+        const imageFile = document.getElementById('editImageFile').files[0];
+
+        let products = await getProducts();
+        const index = products.findIndex(p => p.id == id);
+
+        if (index === -1) return;
+
+        const updateData = async () => {
+            products[index].name = name;
+            products[index].price = price;
+            products[index].stock = stock;
+            products[index].category = category;
+            products[index].variants = editVariants.length > 0 ? editVariants : undefined;
+
+            await saveProducts(products);
+            editModal.style.display = 'none';
+            alert('Product updated successfully!');
+            await renderInventory();
+        };
+
+        if (imageFile) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                products[index].image = e.target.result;
+                await updateData();
+            };
+            reader.readAsDataURL(imageFile);
+        } else {
+            await updateData();
+        }
+    });
+
+    closeEditModal.onclick = () => editModal.style.display = 'none';
+    window.onclick = (e) => { if (e.target == editModal) editModal.style.display = 'none'; };
+
+    window.updateProduct = async (id) => {
         const newPrice = parseInt(document.getElementById(`price-${id}`).value);
         const newStock = parseInt(document.getElementById(`stock-${id}`).value);
 
-        let products = getProducts();
-        const index = products.findIndex(p => p.id === id);
+        let products = await getProducts();
+        const index = products.findIndex(p => p.id == id);
 
         if (index !== -1) {
             products[index].price = newPrice;
             products[index].stock = newStock;
-            saveProducts(products);
+            await saveProducts(products);
             alert(`${products[index].name} updated!`);
-            renderInventory();
+            await renderInventory();
         }
     };
 
-    window.simulateSale = (id) => {
-        let products = getProducts();
-        const index = products.findIndex(p => p.id === id);
+    window.simulateSale = async (id) => {
+        let products = await getProducts();
+        const index = products.findIndex(p => p.id == id);
 
         if (index !== -1 && products[index].stock > 0) {
             products[index].stock -= 1;
             products[index].sold = (products[index].sold || 0) + 1;
-            saveProducts(products);
-            renderInventory();
+            await saveProducts(products);
+            await renderInventory();
         } else if (products[index].stock <= 0) {
             alert('Item is out of stock!');
         }
     };
 
-    window.deleteProduct = (id) => {
-        let products = getProducts();
-        const product = products.find(p => p.id === id);
+    window.deleteProduct = async (id) => {
+        let products = await getProducts();
+        const product = products.find(p => p.id == id);
 
         if (product && confirm(`Are you sure you want to delete "${product.name}"?`)) {
-            const updatedProducts = products.filter(p => p.id !== id);
-            saveProducts(updatedProducts);
-            renderInventory();
+            const updatedProducts = products.filter(p => p.id != id);
+            await saveProducts(updatedProducts);
+            await renderInventory();
         }
     };
 

@@ -99,9 +99,14 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <script src="data.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const user = getCurrentUser();
             if (!user) {
                 window.location.href = 'index.html';
@@ -117,7 +122,8 @@
             `;
 
             // Render Orders
-            const orders = getOrders().filter(o => o.userId === user.id);
+            const allOrders = await getOrders();
+            const orders = allOrders.filter(o => o.userId === user.id);
             const ordersList = document.getElementById('ordersList');
             if (orders.length === 0) {
                 ordersList.innerHTML = '<p style="color: var(--text-muted)">No orders found yet.</p>';

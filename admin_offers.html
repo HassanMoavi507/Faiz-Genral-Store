@@ -134,13 +134,18 @@
         </table>
     </main>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <script src="data.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const offersList = document.getElementById('offersList');
 
-            function renderOffersAdmin() {
-                const products = getProducts();
+            async function renderOffersAdmin() {
+                const products = await getProducts();
                 offersList.innerHTML = '';
 
                 products.forEach(product => {
@@ -176,25 +181,25 @@
                 });
             }
 
-            window.updateOfferDetail = (id, field, value) => {
-                let products = getProducts();
-                const product = products.find(p => p.id === id);
+            window.updateOfferDetail = async (id, field, value) => {
+                let products = await getProducts();
+                const product = products.find(p => p.id == id);
                 if (product) {
-                    product[field] = field === 'originalPrice' ? parseInt(value) : value;
-                    saveProducts(products);
+                    product[field] = (field === 'originalPrice' || field === 'price') ? parseInt(value) : value;
+                    await saveProducts(products);
                 }
             };
 
-            window.toggleSale = (id, isSale) => {
-                let products = getProducts();
-                const product = products.find(p => p.id === id);
+            window.toggleSale = async (id, isSale) => {
+                let products = await getProducts();
+                const product = products.find(p => p.id == id);
                 if (product) {
                     product.onSale = isSale;
-                    saveProducts(products);
+                    await saveProducts(products);
                 }
             };
 
-            renderOffersAdmin();
+            await renderOffersAdmin();
         });
     </script>
 </body>

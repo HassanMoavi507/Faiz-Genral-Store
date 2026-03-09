@@ -136,14 +136,19 @@
 
     <script src="data.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const productId = parseInt(urlParams.get('id'));
+            const productId = urlParams.get('id');
             let selectedVariant = null;
 
             if (productId) {
-                const products = getProducts();
-                const product = products.find(p => p.id === productId);
+                const products = await getProducts();
+                const product = products.find(p => p.id == productId);
+
+                if (!product) {
+                    document.getElementById('productDetail').innerHTML = '<h1>Product not found</h1>';
+                    return;
+                }
 
                 const currentPrice = product.price;
                 const originalPrice = product.originalPrice || currentPrice;
@@ -199,19 +204,19 @@
                     stockEl.style.color = '#4CAF50';
                 }
 
-                document.getElementById('pAddCart').onclick = () => {
+                document.getElementById('pAddCart').onclick = async () => {
                     if (product.variants && product.variants.length > 0 && !selectedVariant) {
                         alert('Please select a flavor first!');
                         return;
                     }
 
-                    // We need access to addToCart from opener if possible, or just re-implement
+                    // We need access to addToCart from opener if possible
                     if (window.opener && window.opener.addToCart) {
-                        window.opener.addToCart(product.id, selectedVariant);
+                        await window.opener.addToCart(product.id, selectedVariant);
                         alert('Added to cart!');
                     } else {
                         // Fallback if opened directly
-                        let cart = JSON.parse(localStorage.getItem('faiz_cart')) || [];
+                        let cart = getCart();
                         const cartItemId = selectedVariant ? `${product.id}-${selectedVariant}` : product.id;
                         const existingItem = cart.find(item => item.cartItemId === cartItemId);
 
@@ -228,7 +233,7 @@
                                 quantity: 1
                             });
                         }
-                        localStorage.setItem('faiz_cart', JSON.stringify(cart));
+                        saveCart(cart);
                         alert('Added to cart! Please refresh the main page to see changes.');
                     }
                 };

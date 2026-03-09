@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const posSearch = document.getElementById('posSearch');
     const searchResults = document.getElementById('searchResults');
     const billItems = document.getElementById('billItems');
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBillBtn = document.getElementById('clearBill');
 
     let currentBill = [];
-    let products = getProducts();
+    let products = await getProducts();
 
     billDate.textContent = `Date: ${new Date().toLocaleString()}`;
 
@@ -86,22 +86,22 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBill();
     };
 
-    printBillBtn.addEventListener('click', () => {
+    printBillBtn.addEventListener('click', async () => {
         if (currentBill.length === 0) {
             alert('Bill is empty!');
             return;
         }
 
         // Update stock and sold counts
-        let allProducts = getProducts();
+        let allProducts = await getProducts();
         currentBill.forEach(billItem => {
-            const p = allProducts.find(product => product.id === billItem.id);
+            const p = allProducts.find(product => product.id == billItem.id);
             if (p) {
                 p.stock -= billItem.quantity;
                 p.sold = (p.sold || 0) + billItem.quantity;
             }
         });
-        saveProducts(allProducts);
+        await saveProducts(allProducts);
 
         // Print
         window.print();
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear after printing
         currentBill = [];
         renderBill();
-        products = getProducts(); // Refresh local list
+        products = await getProducts(); // Refresh local list
     });
 
     clearBillBtn.addEventListener('click', () => {

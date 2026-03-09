@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Load and render products
-    function renderProducts(filterText = '') {
-        const products = getProducts();
+    async function renderProducts(filterText = '') {
+        const products = await getProducts();
         productGrid.innerHTML = '';
 
         const filteredProducts = products.filter(p =>
@@ -72,9 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Cart Logic
-    window.addToCart = (productId, variantName = null) => {
-        const products = getProducts();
-        const product = products.find(p => p.id === productId);
+    window.addToCart = async (productId, variantName = null) => {
+        const products = await getProducts();
+        const product = products.find(p => p.id == productId);
 
         if (product && product.stock > 0) {
             // Check for variants if not already selected
@@ -240,14 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.style.display = 'block';
     });
 
-    doSignup.addEventListener('click', () => {
+    doSignup.addEventListener('click', async () => {
         const name = document.getElementById('signName').value;
         const email = document.getElementById('signEmail').value;
         const pass = document.getElementById('signPass').value;
         const addr = document.getElementById('signAddress').value;
 
         if (name && email && pass && addr) {
-            const res = Auth.signup(name, email, pass, addr);
+            const res = await Auth.signup(name, email, pass, addr);
             if (res.success) {
                 authModal.style.display = 'none';
                 updateAuthUI();
@@ -260,12 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    doLogin.addEventListener('click', () => {
+    doLogin.addEventListener('click', async () => {
         const email = document.getElementById('loginEmail').value;
         const pass = document.getElementById('loginPass').value;
 
         if (email && pass) {
-            const res = Auth.login(email, pass);
+            const res = await Auth.login(email, pass);
             if (res.success) {
                 authModal.style.display = 'none';
                 updateAuthUI();
@@ -277,8 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const googleLoginBtn = document.getElementById('googleLoginBtn');
     if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', () => {
-            const res = Auth.googleLogin();
+        googleLoginBtn.addEventListener('click', async () => {
+            const res = await Auth.googleLogin();
             if (res.success) {
                 authModal.style.display = 'none';
                 updateAuthUI();
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    checkoutBtn.addEventListener('click', () => {
+    checkoutBtn.addEventListener('click', async () => {
         const user = getCurrentUser();
         if (!user) {
             alert('Please login to place an order.');
@@ -298,10 +298,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const cart = getCart();
         if (cart.length === 0) return;
 
-        let products = getProducts();
+        let products = await getProducts();
         let total = 0;
         cart.forEach(item => {
-            const product = products.find(p => p.id === item.id);
+            const product = products.find(p => p.id == item.id);
             if (product) {
                 product.stock -= item.quantity;
                 product.sold = (product.sold || 0) + item.quantity;
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Record Order
-        let orders = getOrders();
+        let orders = await getOrders();
         const newOrder = {
             id: orders.length + 1001,
             userId: user.id,
@@ -320,12 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
             items: cart
         };
         orders.push(newOrder);
-        saveOrders(orders);
+        await saveOrders(orders);
 
-        saveProducts(products);
+        await saveProducts(products);
         saveCart([]);
         updateCartUI();
-        renderProducts();
+        await renderProducts();
         toggleCart(false);
         alert(`Order Placed Successfully! Order ID: #${newOrder.id}`);
     });

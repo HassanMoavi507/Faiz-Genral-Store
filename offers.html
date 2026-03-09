@@ -97,12 +97,17 @@
 
     <div class="overlay" id="overlay"></div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <script src="data.js"></script>
     <script src="app.js"></script>
     <script>
         // Custom rendering for offers page
-        function renderOffers() {
-            const products = getProducts();
+        async function renderOffers() {
+            const products = await getProducts();
             const offersGrid = document.getElementById('offersGrid');
             offersGrid.innerHTML = '';
 
