@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentBill = [];
     let products = await getProducts();
 
+    // Real-time update listener for products
+    onProductsChange((updatedProducts) => {
+        products = updatedProducts;
+        // Optionally re-render if we want to update prices in the current bill, 
+        // but usually, POS keeps the price at the time of adding to bill.
+        // However, for consistency with the user's "automatic" request:
+        renderBill();
+    });
+
     billDate.textContent = `Date: ${new Date().toLocaleString()}`;
 
     posSearch.addEventListener('input', (e) => {

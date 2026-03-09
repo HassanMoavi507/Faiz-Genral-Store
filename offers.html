@@ -106,8 +106,8 @@
     <script src="app.js"></script>
     <script>
         // Custom rendering for offers page
-        async function renderOffers() {
-            const products = await getProducts();
+        async function renderOffers(preFetchedProducts = null) {
+            const products = preFetchedProducts || await getProducts();
             const offersGrid = document.getElementById('offersGrid');
             offersGrid.innerHTML = '';
 
@@ -152,8 +152,13 @@
             });
         }
 
-        // Wait for app.js DOMContentLoaded or just run after
-        setTimeout(renderOffers, 100);
+        // Real-time listener
+        onProductsChange((updatedProducts) => {
+            renderOffers(updatedProducts);
+        });
+
+        // Initial render
+        renderOffers();
     </script>
 </body>
 

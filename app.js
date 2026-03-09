@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Load and render products
-    async function renderProducts(filterText = '') {
-        const products = await getProducts();
+    async function renderProducts(filterText = '', preFetchedProducts = null) {
+        const products = preFetchedProducts || await getProducts();
         productGrid.innerHTML = '';
 
         const filteredProducts = products.filter(p =>
@@ -70,6 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
             productGrid.appendChild(card);
         });
     }
+
+    // Real-time update listener
+    onProductsChange((updatedProducts) => {
+        const currentSearch = searchInput.value;
+        renderProducts(currentSearch, updatedProducts);
+    });
 
     // Cart Logic
     window.addToCart = async (productId, variantName = null) => {

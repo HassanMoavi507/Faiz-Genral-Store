@@ -108,8 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    async function renderInventory() {
-        const products = await getProducts();
+    async function renderInventory(preFetchedProducts = null) {
+        const products = preFetchedProducts || await getProducts();
         inventoryList.innerHTML = '';
 
         products.forEach(product => {
@@ -143,6 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
             inventoryList.appendChild(row);
         });
     }
+
+    // Real-time update listener
+    onProductsChange((updatedProducts) => {
+        renderInventory(updatedProducts);
+    });
 
     // Edit Modal Logic
     const editModal = document.getElementById('editModal');

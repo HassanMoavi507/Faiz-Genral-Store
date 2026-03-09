@@ -1,12 +1,13 @@
 // --- Firebase Configuration ---
 // PASTE YOUR FIREBASE CONFIGURATION HERE
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyBrSpTXFcxmwfvdAu-b0hlLzqAsyy7u_ug",
+    authDomain: "faiz-genral-store.firebaseapp.com",
+    projectId: "faiz-genral-store",
+    storageBucket: "faiz-genral-store.firebasestorage.app",
+    messagingSenderId: "824966747333",
+    appId: "1:824966747333:web:9be4d6a4ff95a1c0ee8cac",
+    measurementId: "G-HX79P92M5S"
 };
 
 // Initialize Firebase only if the config is valid
@@ -130,11 +131,13 @@ async function getProducts() {
     if (db) {
         try {
             const snapshot = await db.collection('products').get();
-            const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // If DB is empty, use initialProducts
+            let products = snapshot.docs.map(doc => ({ ...doc.data(), id: parseInt(doc.id) || doc.id }));
+
+            // MIGRATION LOGIC: If Firestore is empty, push LocalStorage data to it
             if (products.length === 0) {
-                await saveProducts(initialProducts);
-                return initialProducts;
+                const localData = JSON.parse(localStorage.getItem('faiz_products')) || initialProducts;
+                await saveProducts(localData);
+                return localData;
             }
             return products;
         } catch (error) {
@@ -143,6 +146,22 @@ async function getProducts() {
         }
     }
     return JSON.parse(localStorage.getItem('faiz_products'));
+}
+
+// REAL-TIME LISTENER
+function onProductsChange(callback) {
+    if (db) {
+        return db.collection('products').onSnapshot(snapshot => {
+            const products = snapshot.docs.map(doc => ({ ...doc.data(), id: parseInt(doc.id) || doc.id }));
+            // Update local storage cache and always fire callback
+            localStorage.setItem('faiz_products', JSON.stringify(products));
+            callback(products);
+        }, error => {
+            console.error("Firestore Listen Error:", error);
+        });
+    }
+    // Fallback: No real-time for local storage
+    return () => { };
 }
 
 async function saveProducts(products) {
@@ -194,13 +213,32 @@ async function getOrders() {
     if (db) {
         try {
             const snapshot = await db.collection('orders').get();
-            return snapshot.docs.map(doc => doc.data());
+            let orders = snapshot.docs.map(doc => doc.data());
+            if (orders.length === 0) {
+                const localData = JSON.parse(localStorage.getItem('faiz_orders')) || [];
+                if (localData.length > 0) await saveOrders(localData);
+                return localData;
+            }
+            return orders;
         } catch (error) {
             console.error("Error fetching orders from Firestore:", error);
             return JSON.parse(localStorage.getItem('faiz_orders')) || [];
         }
     }
     return JSON.parse(localStorage.getItem('faiz_orders')) || [];
+}
+
+function onOrdersChange(callback) {
+    if (db) {
+        return db.collection('orders').onSnapshot(snapshot => {
+            const orders = snapshot.docs.map(doc => doc.data());
+            localStorage.setItem('faiz_orders', JSON.stringify(orders));
+            callback(orders);
+        }, error => {
+            console.error("Firestore Orders Listen Error:", error);
+        });
+    }
+    return () => { };
 }
 
 async function saveOrders(orders) {

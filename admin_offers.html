@@ -144,8 +144,8 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const offersList = document.getElementById('offersList');
 
-            async function renderOffersAdmin() {
-                const products = await getProducts();
+            async function renderOffersAdmin(preFetchedProducts = null) {
+                const products = preFetchedProducts || await getProducts();
                 offersList.innerHTML = '';
 
                 products.forEach(product => {
@@ -180,6 +180,11 @@
                     offersList.appendChild(row);
                 });
             }
+
+            // Real-time listener
+            onProductsChange((updatedProducts) => {
+                renderOffersAdmin(updatedProducts);
+            });
 
             window.updateOfferDetail = async (id, field, value) => {
                 let products = await getProducts();
